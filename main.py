@@ -1,6 +1,9 @@
-import tkinter as tk
-from tkinter import ttk
-import config
+import tkinter as tk # for gui
+from tkinter import ttk # for advanced gui styling
+import config # for config variables
+
+import sortingProblem # sorting problem class
+
 
 """Application class definition"""
 """----------------------------"""
@@ -12,15 +15,17 @@ class Application(tk.Tk):
     menuframe = None
     appframe = None
     logframe = None
+    problem = None
+    solver = None
 
-    # constructor method
+    """constructor method"""
     def __init__(self, *args, **kwargs):
         # call the Tk constructor from tkinter
         tk.Tk.__init__(self, *args, **kwargs)
         tk.Tk.wm_title(self, config.WINDOW_TITLE)
 
         # create a tkinter frame object that will be holding all contents (mainframe)
-        self.mainframe = tk.Frame(self)
+        self.mainframe = tk.Frame(self, background=config.COLOR_BG2)
         self.mainframe.grid(row=1, column=1)
         self.mainframe.grid_rowconfigure(0, weight=1)
         self.mainframe.grid_columnconfigure(0, weight=1)
@@ -46,6 +51,20 @@ class Application(tk.Tk):
         self.logframe.grid_propagate(0)
         self.logframe.display_contents()
 
+        self.setup_workspace(2,1)
+
+        self.solver.run()
+
+    """method that sets up a new problem and solver"""
+    def setup_workspace(self, algotype, algoid):
+        p = config.ALGO_PROBLEM_CLASSES[algotype]
+        self.problem = p(self.appframe, self.logframe)
+        s = config.ALGO_SOLVER_CLASSES[algotype][algoid]
+        self.solver = s(self, self.problem)
+
+        self.problem.update_log()
+
+
 """end of class definition"""
 
 """title frame class definition"""
@@ -56,7 +75,7 @@ class TitleFrame(tk.Frame):
     display_objects = []
 
     def __init__(self, parent, application):
-        tk.Frame.__init__(self, parent, width=config.APPLICATION_WIDTH, height=config.TITLE_HEIGHT, background=config.COLOR_BG1)
+        tk.Frame.__init__(self, parent, width=config.APPLICATION_WIDTH, height=config.TITLE_HEIGHT, background=config.COLOR_BG1,padx=0,pady=0)
         self.label_text = tk.StringVar()
         self.update_contents(0,0)
         self.display_objects.append(tk.Label(self, textvariable=self.label_text, background=config.COLOR_BG1, foreground=config.COLOR_TEXT1, font="Calibri 9 bold"))
@@ -133,7 +152,7 @@ class MenuFrame(tk.Frame):
         # if the algoname was changed
         else:
             algoname = int(config.ALGO_NAMES[algotype].index(self.selected_algoname.get()))
-        # update the titleframe by calling the resective method passing the ids
+        # update the titleframe by calling the respective method passing the ids
         self.appl.titleframe.update_contents(algotype, algoname)
 
     def display_contents(self):
@@ -146,14 +165,13 @@ class MenuFrame(tk.Frame):
 """end of class definition"""
 
 """application frame class definition"""
-"""----------------------------"""
+"""----------------------------------"""
 class AppFrame(tk.Frame):
 
     display_objects = []
 
     def __init__(self, parent, application):
-        tk.Frame.__init__(self, parent, width=config.APPLICATION_WIDTH-config.LOG_WIDTH, height=config.APPLICATION_HEIGHT, background=config.COLOR_BG3)
-        self.display_objects.append(tk.Label(self, text="appframe"))
+        tk.Frame.__init__(self, parent, width=config.APPLICATION_WIDTH-config.LOG_WIDTH, height=config.APPLICATION_HEIGHT, background=config.COLOR_BG3, padx=0, pady=0)
 
     def display_contents(self):
         for do in self.display_objects:
@@ -161,8 +179,8 @@ class AppFrame(tk.Frame):
 
 """end of class definition"""
 
-"""application frame class definition"""
-"""----------------------------"""
+"""log frame class definition"""
+"""--------------------------"""
 class LogFrame(tk.Frame):
 
     display_objects = []
@@ -186,7 +204,6 @@ class LogFrame(tk.Frame):
             do.grid(row=self.display_objects_grid_params[i][0], column=self.display_objects_grid_params[i][1])
 
 """end of class definition"""
-
 
 """Create the application object and run the mainloop"""
 root = Application()
