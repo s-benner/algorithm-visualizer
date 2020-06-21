@@ -53,7 +53,7 @@ class Application(tk.Tk):
 
         self.setup_workspace(2,1)
 
-        self.solver.run()
+        #self.solver.run()
 
     """method that sets up a new problem and solver"""
     def setup_workspace(self, algotype, algoid):
@@ -61,6 +61,8 @@ class Application(tk.Tk):
         self.problem = p(self.appframe, self.logframe)
         s = config.ALGO_SOLVER_CLASSES[algotype][algoid]
         self.solver = s(self, self.problem)
+
+        self.logframe.init_step_button(self.solver)
 
         self.problem.update_log()
 
@@ -119,8 +121,6 @@ class MenuFrame(tk.Frame):
 
         self.display_objects.append(tk.Label(self, text="   Pick your algorithm:   ", background=config.COLOR_BG1, foreground=config.COLOR_TEXT1))
 
-        #algotypeid = 0 if not self.selected_algotype.get() else int(self.selected_algotype.get())
-        #print(algotypeid)
         self.algonames = tk.StringVar(application)
         self.algonames.set([""])
         self.selected_algoname = tk.StringVar(application)
@@ -192,12 +192,17 @@ class LogFrame(tk.Frame):
         self.display_objects_grid_params.append((1,1))
         self.display_objects.append(tk.Label(self, text="Simulation Speed:", font="Calibri 9", background=config.COLOR_BG2, anchor="w", width=config.LOG_LABEL_WIDTH))
         self.display_objects_grid_params.append((2, 1))
-        self.display_objects.append(tk.Label(self, text="Step Button", font="Calibri 9", background=config.COLOR_BG2, anchor="w", width=config.LOG_LABEL_WIDTH-5))
-        self.display_objects_grid_params.append((3, 1))
+        #self.display_objects.append(tk.Label(self, text="Step Button", font="Calibri 9", background=config.COLOR_BG2, anchor="w", width=config.LOG_LABEL_WIDTH-5))
+        #self.display_objects_grid_params.append((3, 1))
         self.display_objects.append(tk.Label(self, text="Run Button", font="Calibri 9", background=config.COLOR_BG2, anchor="w", width=config.LOG_LABEL_WIDTH-5))
         self.display_objects_grid_params.append((3, 2))
         self.display_objects.append(tk.Label(self, text="Simulation Log:", font="Calibri 11 bold", background=config.COLOR_BG2, anchor="w", width=config.LOG_LABEL_WIDTH))
         self.display_objects_grid_params.append((4, 1))
+
+    def init_step_button(self, solver):
+        self.display_objects.append(tk.Button(self, text=str(solver), font="Calibri 9", background=config.COLOR_BG2, anchor="w", width=config.LOG_LABEL_WIDTH-5, command=solver.step))
+        self.display_objects_grid_params.append((3, 1))
+        self.display_objects[-1].grid(row=self.display_objects_grid_params[-1][0], column=self.display_objects_grid_params[-1][1])
 
     def display_contents(self):
         for i,do in enumerate(self.display_objects):

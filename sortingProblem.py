@@ -37,7 +37,7 @@ class SortingProblem():
         self.canvas.pack()
 
         # create a problem, this will be later replaced by the button
-        self.create_random_problem(30)
+        self.create_random_problem(10)
         self.visualize()
 
 
@@ -66,7 +66,7 @@ class SortingProblem():
 """---------------------------------"""
 
 class BubbleSolver():
-    speed = 1
+    speed = 10
     solved = False
     application = None
     step_id = 0
@@ -112,7 +112,7 @@ class BubbleSolver():
         self.step_id = (self.step_id + 1) % 5
 
         if self.pointer == (self.max_index):
-            if self.max_index == 2: self.solved = True
+            if self.max_index == 1: self.solved = True
             else: self.max_index -= 1
             self.pointer = 0
 
@@ -122,7 +122,7 @@ class BubbleSolver():
     def run(self):
         self.step()
         if self.solved == True: return
-        self.application.after(int(50//self.speed), self.run)
+        self.application.after(int(1000//self.speed), self.run)
 
 """end of class definition"""
 
@@ -133,12 +133,13 @@ class QuickSolver():
     sublists = []
     active_sublist = None
     current_pivot = -1
-    speed = 1
+    speed = 0.4
     solved = False
     application = None
     step_id = 0
     problem = None
-    pointer = 0
+    pointer1 = 0
+    pointer2 = 0
     element1 = 0
     element2 = 0
     swap = 0
@@ -154,27 +155,87 @@ class QuickSolver():
 
     def step(self):
         # step 0 (not animated) pop sublist from stack
-        if self.active_sublist == None: self.active_sublist = self.sublists.pop(0)
-        self.step_id += 1
-        # step 1: select pivot element
         if self.step_id == 0:
+            if self.active_sublist == None: self.active_sublist = self.sublists.pop(0)
+            self.step_id += 1
+            print(self.active_sublist)
+        # step 1: select pivot element
+        if self.step_id == 1:
             if self.current_pivot == -1:
                 self.current_pivot = random.randint(self.active_sublist[0], self.active_sublist[1])
                 self.problem.list_of_status[self.current_pivot] = 3
+                self.pointer1 = self.active_sublist[0]
+                if self.pointer1 == self.current_pivot: self.pointer1 += 1
+                self.pointer2 = self.active_sublist[1]
+                if self.pointer2 == self.current_pivot: self.pointer2 -= 1
+                print(self.pointer1)
+                print(self.pointer2)
             else:
                 self.step_id += 1
-        # step 2: select first element for comparison
-
+        # step 2: find element from the left that is bigger than pivot element
+        if self.step_id == 2:
+            print("Step2 pointer1 ist " + str(self.pointer1))
+            # if we are not looking at the first element of the sublist, unmark the last item
+            if not self.pointer1 == self.active_sublist[0] and not self.pointer1-1 == self.current_pivot: self.problem.list_of_status[self.pointer1-1] = 0
+            if self.pointer1-1 == self.current_pivot: self.problem.list_of_status[self.pointer1-2] = 0
+            # find the new element and mark it
+            self.element1 = self.problem.list_to_sort[self.pointer1]
+            self.problem.list_of_status[self.pointer1] = 1
+            # if the element is not valid/smaller than the pivot, we need to keep going
+            if self.element1 < self.problem.list_to_sort[self.current_pivot]:
+                # check if the next element is the pivot, then advance 2 steps
+                if self.pointer1 + 1 == self.current_pivot: self.pointer1 += 2
+                else: self.pointer1 += 1
+                # make sure that we have not reached pointer2, then go to step 6 otherwise set step id such that step 2 is repeated
+                if self.pointer1 == self.pointer2: self.step_id = 6
+                else: self.step_id = 1
         # step 3: select second element for comparison
+        if self.step_id == 3:
+            print("Step3 pointer ist " + str(self.pointer2))
+            # if we are not looking at the first element of the sublist, unmark the last item
+            if not self.pointer2 == self.active_sublist[1] and not self.pointer2 + 1 == self.current_pivot: self.problem.list_of_status[self.pointer2 + 1] = 0
+            if self.pointer2 + 1 == self.current_pivot: self.problem.list_of_status[self.pointer2 + 2] = 0
+            # find the new element and mark it
+            self.element2 = self.problem.list_to_sort[self.pointer2]
+            self.problem.list_of_status[self.pointer2] = 2
+            # if the element is not valid/bigger than the pivot, we need to keep going
+            if self.element2 > self.problem.list_to_sort[self.current_pivot]:
+                # check if the next element is the pivot, then advance 2 steps
+                if self.pointer2 - 1 == self.current_pivot: self.pointer2 -= 2
+                else: self.pointer2 -= 1
+                # make sure that we have not reached pointer1, then go to step 6 otherwise set step id such that step 2 is repeated
+                if self.pointer1 == self.pointer2:
+                    self.step_id = 6
+                else:
+                    self.step_id = 2
+        # step 4: execute swap
+        if self.step_id == 4:
+            self.problem.list_to_sort[self.pointer1], self.problem.list_to_sort[self.pointer2] = self.problem.list_to_sort[self.pointer2], self.problem.list_to_sort[self.pointer1]
+            self.problem.list_of_status[self.pointer1], self.problem.list_of_status[self.pointer2] = self.problem.list_of_status[self.pointer2], self.problem.list_of_status[self.pointer1]
+        # step 5: unmark swap and continue with step 2
+        if self.step_id == 5:
+            self.problem.list_of_status[self.pointer1], self.problem.list_of_status[self.pointer2] = 0, 0
+            # check if the next element is the pivot, then advance 2 steps
+            if self.pointer2 - 1 == self.current_pivot: self.pointer2 -= 2
+            else: self.pointer2 -= 1
+            if self.pointer1 == self.pointer2: self.step_id = 6
+            if self.pointer1 + 1 == self.current_pivot: self.pointer1 += 2
+            else: self.pointer1 += 1
+            if self.pointer1 == self.pointer2: self.step_id = 6
+            if not self.step_id == 6: self.step_id = 1
+        # step 6: if the pointers have met, swap pivot element in and create new sublists
+        if self.step_id == 6:
+            if self.current_pivot < self.pointer1 and self.problem.list_to_sort[self.pointer1] < self.problem.list_to_sort[self.current_pivot]:
+                self.problem.list_to_sort[self.pointer1], self.problem.list_to_sort[self.current_pivot] = self.problem.list_to_sort[self.current_pivot], self.problem.list_to_sort[self.pointer1]
+                self.problem.list_of_status[self.pointer1], self.problem.list_of_status[self.current_pivot] = self.problem.list_of_status[self.current_pivot], self.problem.list_of_status[self.pointer1]
+            if self.current_pivot < self.pointer1 and self.problem.list_to_sort[self.pointer1] > self.problem.list_to_sort[self.current_pivot]:
+                self.problem.list_to_sort[self.pointer1-1], self.problem.list_to_sort[self.current_pivot] = self.problem.list_to_sort[self.current_pivot], self.problem.list_to_sort[self.pointer1-1]
+                self.problem.list_of_status[self.pointer1-1], self.problem.list_of_status[self.current_pivot] = self.problem.list_of_status[self.current_pivot], self.problem.list_of_status[self.pointer1-1]
 
-        # step 3: swap if required
-
-        # step 4: start next iteration
-
-        # step 5:
-
+            print("getroffen pointer 1 " +str(self.pointer1) + "und pointer 2 " + str(self.pointer2))
+            self.solved = True
         # increment step id, call visualization
-        self.step_id = (self.step_id + 1) % 5
+        self.step_id = (self.step_id + 1) % 7
 
 
         self.application.problem.visualize()
@@ -183,6 +244,6 @@ class QuickSolver():
     def run(self):
         self.step()
         if self.solved == True: return
-        self.application.after(int(50//self.speed), self.run)
+        self.application.after(int(1000//self.speed), self.run)
 
 """end of class definition"""
