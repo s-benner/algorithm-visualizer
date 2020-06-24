@@ -51,9 +51,9 @@ class Application(tk.Tk):
         self.logframe.grid_propagate(0)
         self.logframe.display_contents()
 
-        self.setup_workspace(2,1)
+        self.setup_workspace(2,2)
 
-        #self.solver.run()
+        self.solver.run()
 
     """method that sets up a new problem and solver"""
     def setup_workspace(self, algotype, algoid):
