@@ -37,7 +37,7 @@ class SortingProblem():
         self.canvas.pack()
 
         # create a problem, this will be later replaced by the button
-        self.create_random_problem(40)
+        self.create_random_problem(100)
         self.visualize()
 
 
@@ -160,7 +160,9 @@ class QuickSolver():
         # step 0 pop sublist from stack and show the selected sublist
         if self.step_id == 0:
             if not self.swapin == -1:
+                print(str(self.current_pivot) + " " + str(self.swapin) + " " +str(self.pointer1))
                 self.problem.list_of_status[self.current_pivot], self.problem.list_of_status[self.swapin] = 0,0
+                if not self.pointer1 == -1: self.problem.list_of_status[self.pointer1] = 0
                 self.problem.list_of_status[self.swapin] = 3
                 self.swapin = -1
             if not self.sublists: return
@@ -179,6 +181,7 @@ class QuickSolver():
                 self.sublistshow = 0
             # select pivot element and show it
             if self.current_pivot == -1:
+                self.pointer1, self.pointer2 = -1,-1
                 self.current_pivot = random.randint(self.active_sublist[0], self.active_sublist[1])
                 print("privot is " + str(self.current_pivot))
                 self.problem.list_of_status[self.current_pivot] = 6
@@ -259,7 +262,7 @@ class QuickSolver():
             if self.swapin-1 >= self.active_sublist[0]:
                 self.sublists.append((self.active_sublist[0],self.swapin-1))
                 print("appended" + str((self.active_sublist[0],self.swapin-1)))
-            if self.swapin+1 <= self.active_sublist[1]-1:
+            if self.swapin+1 <= self.active_sublist[1]:
                 self.sublists.append((self.swapin+1,self.active_sublist[1]))
                 print("appended" + str((self.swapin+1,self.active_sublist[1])))
             self.active_sublist = None
