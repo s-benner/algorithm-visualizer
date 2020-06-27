@@ -20,6 +20,10 @@ class SortingProblem():
     def __init__(self, appframe, logframe):
         self.parent_frame = appframe
         self.log_frame = logframe
+        self.list_to_sort = []
+        self.list_of_status = []
+        self.problem_size = 0
+        self.display_objects = []
 
         # print the instructions
 
@@ -37,7 +41,7 @@ class SortingProblem():
         self.canvas.pack()
 
         # create a problem, this will be later replaced by the button
-        self.create_random_problem(100)
+        self.create_random_problem(30)
         self.visualize()
 
 
@@ -160,14 +164,14 @@ class QuickSolver():
         # step 0 pop sublist from stack and show the selected sublist
         if self.step_id == 0:
             if not self.swapin == -1:
-                print(str(self.current_pivot) + " " + str(self.swapin) + " " +str(self.pointer1))
                 self.problem.list_of_status[self.current_pivot], self.problem.list_of_status[self.swapin] = 0,0
                 if not self.pointer1 == -1: self.problem.list_of_status[self.pointer1] = 0
                 self.problem.list_of_status[self.swapin] = 3
                 self.swapin = -1
-            if not self.sublists: return
+            if not self.sublists:
+                self.solved = True
+                return
             if self.active_sublist == None: self.active_sublist = self.sublists.pop(0)
-            print("now processing " + str(self.active_sublist))
             for i in range(self.active_sublist[0],self.active_sublist[1]+1):
                 self.problem.list_of_status[i] = 4
             self.sublistshow = 1
@@ -183,7 +187,6 @@ class QuickSolver():
             if self.current_pivot == -1:
                 self.pointer1, self.pointer2 = -1,-1
                 self.current_pivot = random.randint(self.active_sublist[0], self.active_sublist[1])
-                print("privot is " + str(self.current_pivot))
                 self.problem.list_of_status[self.current_pivot] = 6
                 # check if the length is only 1
                 if self.active_sublist[0] - self.active_sublist[1] == 0:
@@ -193,7 +196,6 @@ class QuickSolver():
                     # set the pointers to the outmost element, unless its the pivot
                     self.pointer1 = self.active_sublist[0] if not self.active_sublist[0] == self.current_pivot else self.active_sublist[0] + 1
                     self.pointer2 = self.active_sublist[1] if not self.active_sublist[1] == self.current_pivot else self.active_sublist[1] - 1
-                    print("Srating elements: " + str(self.pointer1)+ " and " + str(self.pointer2))
             else:
                 self.step_id += 1
         # step 2: mark both pointers
@@ -255,25 +257,30 @@ class QuickSolver():
                 self.swapin = self.pointer1 -1
             if (self.current_pivot > self.pointer1 and self.problem.list_to_sort[self.pointer1] < self.problem.list_to_sort[self.current_pivot]):
                 self.swapin = self.pointer1 +1
+            if self.problem.list_to_sort[self.pointer1] == self.problem.list_to_sort[self.current_pivot]: self.swapin = self.current_pivot
         #step 9: execute the swapin of the pivot
         if self.step_id == 9:
+            if self.swapin == -1:
+                self.solved = True
+                return
             self.problem.list_to_sort[self.swapin], self.problem.list_to_sort[self.current_pivot] = self.problem.list_to_sort[self.current_pivot], self.problem.list_to_sort[self.swapin]
             self.problem.list_of_status[self.swapin], self.problem.list_of_status[self.current_pivot] = self.problem.list_of_status[self.current_pivot], self.problem.list_of_status[self.swapin]
             if self.swapin-1 >= self.active_sublist[0]:
                 self.sublists.append((self.active_sublist[0],self.swapin-1))
-                print("appended" + str((self.active_sublist[0],self.swapin-1)))
             if self.swapin+1 <= self.active_sublist[1]:
                 self.sublists.append((self.swapin+1,self.active_sublist[1]))
-                print("appended" + str((self.swapin+1,self.active_sublist[1])))
             self.active_sublist = None
-            #self.solved = True
+
         # increment step id, call visualization
         self.step_id = (self.step_id + 1) % 10
         self.application.problem.visualize()
 
     def run(self):
         self.step()
-        if self.solved == True: return
+        if self.solved == True:
+            self.problem.list_of_status[self.current_pivot] = 3
+            self.application.problem.visualize()
+            return
         self.application.after(int(1000//self.speed), self.run)
 
 """end of class definition"""

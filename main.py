@@ -2,21 +2,20 @@ import tkinter as tk # for gui
 from tkinter import ttk # for advanced gui styling
 import config # for config variables
 
-import sortingProblem # sorting problem class
-
-
 """Application class definition"""
 """----------------------------"""
 class Application(tk.Tk):
+    """This class holds the application itself, so it inherits from Tk class. It basically contains the frame
+    for the display and the problem and solver objects, that are active """
 
     # attributes
-    mainframe = None
-    titleframe = None
-    menuframe = None
-    appframe = None
-    logframe = None
-    problem = None
-    solver = None
+    mainframe = None # frame that holds everything else
+    titleframe = None # frame or the program title
+    menuframe = None # frame sor the selection of the problem and the solver method
+    appframe = None # frame for the actual animation
+    logframe = None # frame for simulation setting and log
+    problem = None # class that contains the problem to be solved
+    solver = None # class that contains the algorithm logic
 
     """constructor method"""
     def __init__(self, *args, **kwargs):
@@ -36,36 +35,44 @@ class Application(tk.Tk):
         self.titleframe.grid(row=1, column=1, columnspan=2)
         self.titleframe.display_contents()
 
+        # create the menu frame
         self.menuframe = MenuFrame(self.mainframe, self)
         self.menuframe.grid_propagate(0)
         self.menuframe.grid(row=2, column=1, columnspan=2)
         self.menuframe.display_contents()
 
-        self.appframe = AppFrame(self.mainframe, self)
-        self.appframe.grid(row=3, column=1)
-        self.appframe.grid_propagate(0)
-        self.appframe.display_contents()
+        # create the appframe by a mehtod, because the method is needed to reset the frame for a new problem
+        self.recreate_apframe()
 
+        #create the logframe
         self.logframe = LogFrame(self.mainframe, self)
         self.logframe.grid(row=3, column=2)
         self.logframe.grid_propagate(0)
         self.logframe.display_contents()
 
-        self.setup_workspace(2,2)
-
-        self.solver.run()
-
     """method that sets up a new problem and solver"""
     def setup_workspace(self, algotype, algoid):
+        # clear the appframe
+        self.recreate_apframe()
+        # create the problem and solver objects
         p = config.ALGO_PROBLEM_CLASSES[algotype]
         self.problem = p(self.appframe, self.logframe)
         s = config.ALGO_SOLVER_CLASSES[algotype][algoid]
         self.solver = s(self, self.problem)
-
+        # create the control buttons in the logframe
         self.logframe.init_step_button(self.solver)
-
+        # display the log for the first time
         self.problem.update_log()
 
+    """method to reset and recreate the appframe for a new problem"""
+    def recreate_apframe(self):
+        # destroy the current appframe
+        if self.appframe: self.appframe.destroy()
+        # create the appframe
+        self.appframe = AppFrame(self.mainframe, self)
+        self.appframe.grid(row=3, column=1)
+        self.appframe.grid_propagate(0)
+        self.appframe.display_contents()
 
 """end of class definition"""
 
@@ -129,7 +136,7 @@ class MenuFrame(tk.Frame):
         self.menu2.config(width=config.DROPDOWNMENU_WIDTH)
         self.display_objects.append(self.menu2)
 
-        self.display_objects.append(tk.Label(self, text="Set up my workspace!", background=config.COLOR_BG1, foreground=config.COLOR_TEXT1))
+        self.display_objects.append(tk.Button(self, text="Set up my workspace!", background=config.COLOR_BG1, foreground=config.COLOR_TEXT1))
 
     def input_menu_changed(self):
         # get the ids of the selected algorithm type and name
@@ -154,6 +161,7 @@ class MenuFrame(tk.Frame):
             algoname = int(config.ALGO_NAMES[algotype].index(self.selected_algoname.get()))
         # update the titleframe by calling the respective method passing the ids
         self.appl.titleframe.update_contents(algotype, algoname)
+        self.display_objects[-1].configure(command=lambda arg1=algotype, arg2=algoname: self.appl.setup_workspace(arg1, arg2))
 
     def display_contents(self):
         for i,do in enumerate(self.display_objects):
@@ -185,6 +193,7 @@ class LogFrame(tk.Frame):
 
     display_objects = []
     display_objects_grid_params = []
+    appl = None
 
     def __init__(self, parent, application):
         tk.Frame.__init__(self, parent, width=config.LOG_WIDTH, height=config.APPLICATION_HEIGHT, background=config.COLOR_BG2)
@@ -192,17 +201,18 @@ class LogFrame(tk.Frame):
         self.display_objects_grid_params.append((1,1))
         self.display_objects.append(tk.Label(self, text="Simulation Speed:", font="Calibri 9", background=config.COLOR_BG2, anchor="w", width=config.LOG_LABEL_WIDTH))
         self.display_objects_grid_params.append((2, 1))
-        #self.display_objects.append(tk.Label(self, text="Step Button", font="Calibri 9", background=config.COLOR_BG2, anchor="w", width=config.LOG_LABEL_WIDTH-5))
-        #self.display_objects_grid_params.append((3, 1))
-        self.display_objects.append(tk.Label(self, text="Run Button", font="Calibri 9", background=config.COLOR_BG2, anchor="w", width=config.LOG_LABEL_WIDTH-5))
-        self.display_objects_grid_params.append((3, 2))
         self.display_objects.append(tk.Label(self, text="Simulation Log:", font="Calibri 11 bold", background=config.COLOR_BG2, anchor="w", width=config.LOG_LABEL_WIDTH))
         self.display_objects_grid_params.append((4, 1))
+        self.appl = application
 
     def init_step_button(self, solver):
-        self.display_objects.append(tk.Button(self, text=str(solver), font="Calibri 9", background=config.COLOR_BG2, anchor="w", width=config.LOG_LABEL_WIDTH-5, command=solver.step))
+        self.display_objects.append(tk.Button(self, text="Step", font="Calibri 9", background=config.COLOR_BG2, anchor="w", width=config.LOG_LABEL_WIDTH-10, command=solver.step))
         self.display_objects_grid_params.append((3, 1))
         self.display_objects[-1].grid(row=self.display_objects_grid_params[-1][0], column=self.display_objects_grid_params[-1][1])
+
+        self.display_objects.append(tk.Button(self, text="Run", font="Calibri 9", background=config.COLOR_BG2, anchor="w",width=config.LOG_LABEL_WIDTH - 10, command=solver.run))
+        self.display_objects_grid_params.append((3, 2))
+        self.display_objects[-1].grid(row=self.display_objects_grid_params[-1][0],column=self.display_objects_grid_params[-1][1])
 
     def display_contents(self):
         for i,do in enumerate(self.display_objects):
