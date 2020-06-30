@@ -10,20 +10,23 @@ class SortingProblem():
     # attributes
     list_to_sort = [] # contains the values to be sorted
     list_of_status = [] # contains the status flag for each element for the visualization
-    logfile = [] # contains all log entries
+    logfile = "" # contains all log entries
     problem_size = 0 # number of elements to be sorted
     parent_frame = None # reference to the frame where the visualization is to be placed
     log_frame = None # reference to the frame where the log is to be placed
     canvas = None
     display_objects = []
+    appl = None
 
-    def __init__(self, appframe, logframe):
+    def __init__(self, appframe, logframe, application):
         self.parent_frame = appframe
         self.log_frame = logframe
         self.list_to_sort = []
         self.list_of_status = []
         self.problem_size = 0
         self.display_objects = []
+        self.logfile = tk.Text(self.log_frame)
+        self.appl = application
 
         # print the instructions
 
@@ -41,7 +44,7 @@ class SortingProblem():
         self.canvas.pack()
 
         # create a problem, this will be later replaced by the button
-        self.create_random_problem(30)
+        self.create_random_problem(6)
         self.visualize()
 
 
@@ -53,15 +56,13 @@ class SortingProblem():
         for i,element in enumerate(self.list_to_sort):
             self.canvas.create_rectangle(20+i*interval,2,20+(i+1)*interval-3,0.95*element*config.CANVAS_HEIGHT/1000, fill=config.ANIM_COLORS[self.list_of_status[i]])
 
-    def update_log(self):
-        pass
-
     def create_random_problem(self, count):
         self.problem_size = min(count,100)
         for i in range(self.problem_size):
             self.list_to_sort.append(int(((random.random()*1000)//1)+50))
             self.list_of_status.append(0)
-        self.logfile.append("Array of " + str(self.problem_size) + "elements generated")
+        logtext = "Problem with " + str(self.problem_size) + " elements created!"
+        self.appl.logoframe.update_log_box(logtext, [])
 
 
 """end of class definition"""
@@ -90,28 +91,67 @@ class BubbleSolver():
         pass
 
     def step(self):
+        if self.solved: return
+        logtext = ""
+        logcoloring = []
         # step 0: select first element for comparison
         if self.step_id == 0:
             self.element1 = self.problem.list_to_sort[self.pointer]
             self.problem.list_of_status[self.pointer] = 1
+            logtext = "Pick element "
+            l1 = "1."+str(len(logtext))
+            logtext += str(self.element1)
+            l2 = "1."+str(len(logtext))
+            logtext += " for comparison"
+            logcoloring.append(["col1",l1,l2])
         # step 1: select second element for comparison
         if self.step_id == 1:
             self.element2 = self.problem.list_to_sort[self.pointer+1]
             self.problem.list_of_status[self.pointer+1] = 2
+            logtext = "Pick element "
+            l1 = "1."+str(len(logtext))
+            logtext += str(self.element2)
+            l2 = "1."+str(len(logtext))
+            logtext+= " for comparison"
+            logcoloring.append(["col2",l1,l2])
         # step 2: do comparison
         if self.step_id == 2:
-            if self.element1 > self.element2: self.swap = 1
-            else: self.step_id += 1
+            l1 = "1.0"
+            logtext = str(self.element1)
+            l2 = "1."+str(len(logtext))
+            if self.element1 > self.element2:
+                self.swap = 1
+                logtext += " < "
+            else:
+                self.step_id += 1
+                logtext += " < "
+            l3 = "1."+str(len(logtext))
+            logtext += str(self.element2)
+            l4 = "1."+str(len(logtext))
+            logtext += " -> swap" if self.element1 > self.element2 else " -> no swap"
+            logcoloring.append(["col1",l1,l2])
+            logcoloring.append(["col2",l3,l4])
         # step 3: swap if required
         if self.step_id == 3:
             if self.swap == 1:
                 self.problem.list_to_sort[self.pointer], self.problem.list_to_sort[self.pointer+1] = self.problem.list_to_sort[self.pointer+1], self.problem.list_to_sort[self.pointer]
                 self.problem.list_of_status[self.pointer], self.problem.list_of_status[self.pointer+1] = self.problem.list_of_status[self.pointer+1], self.problem.list_of_status[self.pointer]
                 self.swap = 0
+                logtext = "Swapped "
+                l1 = "1."+str(len(logtext))
+                logtext += str(self.element2)
+                l2 = "1."+str(len(logtext))
+                logtext += " and "
+                l3 = "1."+str(len(logtext))
+                logtext += str(self.element1)
+                l4 = "1."+str(len(logtext))
+                logcoloring.append(["col2",l1,l2])
+                logcoloring.append(["col1",l3,l4])
         # step 4: start next iteration
         if self.step_id == 4:
             self.problem.list_of_status[self.pointer], self.problem.list_of_status[self.pointer + 1] = 0, 0
             self.pointer += 1
+            logtext = "Start next iteration"
         # increment step id, call visualization
         self.step_id = (self.step_id + 1) % 5
 
@@ -119,13 +159,31 @@ class BubbleSolver():
             if self.max_index == 1:
                 self.problem.list_of_status[1], self.problem.list_of_status[0] = 3, 3
                 self.solved = True
+                logtext = "Elements "
+                l1 = "2."+str(len(logtext))
+                logtext += str(self.problem.list_to_sort[1])
+                l2 = "2."+str(len(logtext))
+                logtext += ", "
+                l3 = "2."+str(len(logtext))
+                logtext += str(self.problem.list_to_sort[0])
+                l4 = "2."+str(len(logtext))
+                logtext += " have reached correct position"
+                logtext = "Sorting complete!\n" + logtext
+                logcoloring.append(["col3",l1,l2])
+                logcoloring.append(["col3",l3,l4])
             else:
                 self.problem.list_of_status[self.max_index] = 3
                 self.max_index -= 1
+                logtext = "Element "
+                l1 = "1."+str(len(logtext))
+                logtext += str(self.problem.list_to_sort[self.pointer])
+                l2 = "1."+str(len(logtext))
+                logtext += " in correct position"
+                logcoloring.append(["col3",l1,l2])
             self.pointer = 0
 
         self.application.problem.visualize()
-
+        self.application.logoframe.update_log_box(logtext, logcoloring)
 
     def run(self):
         self.step()
@@ -161,6 +219,8 @@ class QuickSolver():
         pass
 
     def step(self):
+        logtext = ""
+        logcoloring = []
         # step 0 pop sublist from stack and show the selected sublist
         if self.step_id == 0:
             if not self.swapin == -1:
@@ -265,15 +325,16 @@ class QuickSolver():
                 return
             self.problem.list_to_sort[self.swapin], self.problem.list_to_sort[self.current_pivot] = self.problem.list_to_sort[self.current_pivot], self.problem.list_to_sort[self.swapin]
             self.problem.list_of_status[self.swapin], self.problem.list_of_status[self.current_pivot] = self.problem.list_of_status[self.current_pivot], self.problem.list_of_status[self.swapin]
-            if self.swapin-1 >= self.active_sublist[0]:
-                self.sublists.append((self.active_sublist[0],self.swapin-1))
             if self.swapin+1 <= self.active_sublist[1]:
-                self.sublists.append((self.swapin+1,self.active_sublist[1]))
+                self.sublists.insert(0, (self.swapin+1,self.active_sublist[1]))
+            if self.swapin - 1 >= self.active_sublist[0]:
+                self.sublists.insert(0, (self.active_sublist[0], self.swapin - 1))
             self.active_sublist = None
 
         # increment step id, call visualization
         self.step_id = (self.step_id + 1) % 10
         self.application.problem.visualize()
+        self.application.logoframe.update_log_box(logtext, logcoloring)
 
     def run(self):
         self.step()

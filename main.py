@@ -14,6 +14,7 @@ class Application(tk.Tk):
     menuframe = None # frame sor the selection of the problem and the solver method
     appframe = None # frame for the actual animation
     logframe = None # frame for simulation setting and log
+    logoframe = None
     problem = None # class that contains the problem to be solved
     solver = None # class that contains the algorithm logic
 
@@ -50,19 +51,21 @@ class Application(tk.Tk):
         self.logframe.grid_propagate(0)
         self.logframe.display_contents()
 
+        self.logoframe = LogoFrame(self.mainframe, self)
+        self.logoframe.grid (row=4, column=2)
+        self.logoframe.grid_propagate(0)
+
     """method that sets up a new problem and solver"""
     def setup_workspace(self, algotype, algoid):
         # clear the appframe
         self.recreate_apframe()
         # create the problem and solver objects
         p = config.ALGO_PROBLEM_CLASSES[algotype]
-        self.problem = p(self.appframe, self.logframe)
+        self.problem = p(self.appframe, self.logframe, self)
         s = config.ALGO_SOLVER_CLASSES[algotype][algoid]
         self.solver = s(self, self.problem)
         # create the control buttons in the logframe
         self.logframe.init_step_button(self.solver)
-        # display the log for the first time
-        self.problem.update_log()
 
     """method to reset and recreate the appframe for a new problem"""
     def recreate_apframe(self):
@@ -70,7 +73,7 @@ class Application(tk.Tk):
         if self.appframe: self.appframe.destroy()
         # create the appframe
         self.appframe = AppFrame(self.mainframe, self)
-        self.appframe.grid(row=3, column=1)
+        self.appframe.grid(row=3, column=1, rowspan=2)
         self.appframe.grid_propagate(0)
         self.appframe.display_contents()
 
@@ -167,9 +170,6 @@ class MenuFrame(tk.Frame):
         for i,do in enumerate(self.display_objects):
             do.grid(row=1, column=i)
 
-    def update_contents(self):
-        pass
-
 """end of class definition"""
 
 """application frame class definition"""
@@ -187,6 +187,34 @@ class AppFrame(tk.Frame):
 
 """end of class definition"""
 
+"""logo frame class definition"""
+"""---------------------------"""
+class LogoFrame(tk.Frame):
+
+    logtextbox = None
+    appl = None
+
+    def __init__(self, parent, application):
+        tk.Frame.__init__(self, parent, width=config.LOG_WIDTH, height=config.APPLICATION_HEIGHT-100, background=config.COLOR_BG2, padx=5)
+        self.appl = application
+        frametitle = tk.Label(self, text="Simulation Log:", font="Calibri 11 bold", background=config.COLOR_BG2, anchor="w", width=config.LOG_LABEL_WIDTH+11)
+        self.logtextbox = tk.Text(self, height=34, width=39, font="Calibri 8", background=config.COLOR_BG1, foreground=config.COLOR_BG3)
+        frametitle.grid(row=1, column=1)
+        self.logtextbox.grid(row=2, column=1)
+        self.logtextbox.config(state='disabled')
+        for i in range(len(config.ANIM_COLORS)):
+            self.logtextbox.tag_configure("col"+str(i), foreground=config.ANIM_COLORS[i])
+
+    def update_log_box(self, string, coloring):
+        self.logtextbox.config(state='normal')
+        self.logtextbox.insert('1.0', (string + "\n"))
+        for mark in coloring:
+            self.logtextbox.tag_add(mark[0], mark[1], mark[2])
+        self.logtextbox.config(state='disabled')
+        self.appl.update()
+
+"""end of class definition"""
+
 """log frame class definition"""
 """--------------------------"""
 class LogFrame(tk.Frame):
@@ -194,15 +222,17 @@ class LogFrame(tk.Frame):
     display_objects = []
     display_objects_grid_params = []
     appl = None
+    logtext = None
 
     def __init__(self, parent, application):
-        tk.Frame.__init__(self, parent, width=config.LOG_WIDTH, height=config.APPLICATION_HEIGHT, background=config.COLOR_BG2)
+        tk.Frame.__init__(self, parent, width=config.LOG_WIDTH, height=100, background=config.COLOR_BG2, padx=5)
         self.display_objects.append(tk.Label(self, text="Simulation Settings:", font="Calibri 11 bold", background=config.COLOR_BG2, anchor="w", width=config.LOG_LABEL_WIDTH))
         self.display_objects_grid_params.append((1,1))
         self.display_objects.append(tk.Label(self, text="Simulation Speed:", font="Calibri 9", background=config.COLOR_BG2, anchor="w", width=config.LOG_LABEL_WIDTH))
         self.display_objects_grid_params.append((2, 1))
-        self.display_objects.append(tk.Label(self, text="Simulation Log:", font="Calibri 11 bold", background=config.COLOR_BG2, anchor="w", width=config.LOG_LABEL_WIDTH))
-        self.display_objects_grid_params.append((4, 1))
+        #self.display_objects.append(tk.Label(self, text="Simulation Log:", font="Calibri 11 bold", background=config.COLOR_BG2, anchor="w", width=config.LOG_LABEL_WIDTH))
+        #self.display_objects_grid_params.append((4, 1))
+
         self.appl = application
 
     def init_step_button(self, solver):
