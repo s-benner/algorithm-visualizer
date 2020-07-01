@@ -13,44 +13,39 @@ class Application(tk.Tk):
     titleframe = None # frame or the program title
     menuframe = None # frame sor the selection of the problem and the solver method
     appframe = None # frame for the actual animation
-    logframe = None # frame for simulation setting and log
-    logoframe = None
+    logframe = None # frame for simulation settings
+    logoframe = None # frame for the simulation log
     problem = None # class that contains the problem to be solved
     solver = None # class that contains the algorithm logic
 
     """constructor method"""
     def __init__(self, *args, **kwargs):
-        # call the Tk constructor from tkinter
+        # call the Tk constructor from tkinter and set the window title
         tk.Tk.__init__(self, *args, **kwargs)
         tk.Tk.wm_title(self, config.WINDOW_TITLE)
-
         # create a tkinter frame object that will be holding all contents (mainframe)
         self.mainframe = tk.Frame(self, background=config.COLOR_BG2)
         self.mainframe.grid(row=1, column=1)
         self.mainframe.grid_rowconfigure(0, weight=1)
         self.mainframe.grid_columnconfigure(0, weight=1)
-
-        # create the program frames
+        # create the title frame
         self.titleframe = TitleFrame(self.mainframe, self)
         self.titleframe.grid_propagate(0)
         self.titleframe.grid(row=1, column=1, columnspan=2)
         self.titleframe.display_contents()
-
         # create the menu frame
         self.menuframe = MenuFrame(self.mainframe, self)
         self.menuframe.grid_propagate(0)
         self.menuframe.grid(row=2, column=1, columnspan=2)
         self.menuframe.display_contents()
-
-        # create the appframe by a mehtod, because the method is needed to reset the frame for a new problem
+        # create the appframe by a method, because the method is needed to reset the frame for a new problem
         self.recreate_apframe()
-
         #create the logframe
         self.logframe = LogFrame(self.mainframe, self)
         self.logframe.grid(row=3, column=2)
         self.logframe.grid_propagate(0)
         self.logframe.display_contents()
-
+        # create the log frame, where the simulation log is presented
         self.logoframe = LogoFrame(self.mainframe, self)
         self.logoframe.grid (row=4, column=2)
         self.logoframe.grid_propagate(0)
@@ -205,9 +200,14 @@ class LogoFrame(tk.Frame):
         for i in range(len(config.ANIM_COLORS)):
             self.logtextbox.tag_configure("col"+str(i), foreground=config.ANIM_COLORS[i])
 
+    def clear_text_widget(self):
+        self.logtextbox.config(state='normal')
+        self.logtextbox.delete("1.0", "end")
+        self.logtextbox.config(state='disabled')
+
     def update_log_box(self, string, coloring):
         self.logtextbox.config(state='normal')
-        self.logtextbox.insert('1.0', (string + "\n"))
+        self.logtextbox.insert("1.0", (string + "\n"))
         for mark in coloring:
             self.logtextbox.tag_add(mark[0], mark[1], mark[2])
         self.logtextbox.config(state='disabled')

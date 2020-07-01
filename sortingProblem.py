@@ -10,13 +10,14 @@ class SortingProblem():
     # attributes
     list_to_sort = [] # contains the values to be sorted
     list_of_status = [] # contains the status flag for each element for the visualization
-    logfile = "" # contains all log entries
+    #logfile = "" # contains all log entries
     problem_size = 0 # number of elements to be sorted
     parent_frame = None # reference to the frame where the visualization is to be placed
     log_frame = None # reference to the frame where the log is to be placed
-    canvas = None
-    display_objects = []
-    appl = None
+    canvas = None # reference to the animation canvas object
+    #display_objects = []
+    appl = None # reference to the application object
+    interval = 0 # spacing for the animation, calculate from the problem size
 
     def __init__(self, appframe, logframe, application):
         self.parent_frame = appframe
@@ -24,48 +25,50 @@ class SortingProblem():
         self.list_to_sort = []
         self.list_of_status = []
         self.problem_size = 0
-        self.display_objects = []
-        self.logfile = tk.Text(self.log_frame)
+        #self.display_objects = []
+        #self.logfile = tk.Text(self.log_frame)
         self.appl = application
-
         # print the instructions
-
         inst_lines = []
         inst_lines.append("Instructions:")
         inst_lines.append("1. Select the number of elements you wish to sort in the menu on the right and hit the create Problem button. Your list to sort will be created automatically.")
         inst_lines.append("2. In the log section to the right, select the simulation speed and hit run. If you hit step, the algorithm will only perform a single step.")
-
         for line in inst_lines:
             temp = tk.Label(self.parent_frame, text=line, font="Calibri 9", background=config.COLOR_BG3, anchor="w")
             temp.pack()
-
         # create the canvas for the actual animation
         self.canvas=tk.Canvas(appframe, width=config.CANVAS_WIDTH, height=config.CANVAS_HEIGHT, background=config.COLOR_BG3)
         self.canvas.pack()
-
         # create a problem, this will be later replaced by the button
-        self.create_random_problem(6)
+        self.create_random_problem(100)
         self.visualize()
 
-
-
+    """method that draws the actual animation into the animation canvas"""
     def visualize(self):
+        # clear the animation frame and create the border
         self.canvas.delete("all")
         self.canvas.create_line(2, 2, config.CANVAS_WIDTH, 2, config.CANVAS_WIDTH, config.CANVAS_HEIGHT, 2,config.CANVAS_HEIGHT, 2, 2)
-        interval = (config.CANVAS_WIDTH-40) // self.problem_size
+        # loop through all elements of the list to sort and draw them on canvas
         for i,element in enumerate(self.list_to_sort):
-            self.canvas.create_rectangle(20+i*interval,2,20+(i+1)*interval-3,0.95*element*config.CANVAS_HEIGHT/1000, fill=config.ANIM_COLORS[self.list_of_status[i]])
+            self.canvas.create_rectangle(20+i*self.interval,2,20+(i+1)*self.interval-3,0.95*element*config.CANVAS_HEIGHT/1000, fill=config.ANIM_COLORS[self.list_of_status[i]])
 
+    """method that sets up a random sorting problem of specified size"""
     def create_random_problem(self, count):
+        # limit problem size to 100 and calculate that interval (spacing for the animation)
         self.problem_size = min(count,100)
+        self.interval = (config.CANVAS_WIDTH - 40) // self.problem_size
+        # create the desired number of random elements, offset of +50 to not have too small elements and create the list for status tracking
         for i in range(self.problem_size):
             self.list_to_sort.append(int(((random.random()*1000)//1)+50))
             self.list_of_status.append(0)
+        # create a log entry
+        self.appl.logoframe.clear_text_widget()
         logtext = "Problem with " + str(self.problem_size) + " elements created!"
         self.appl.logoframe.update_log_box(logtext, [])
 
-
 """end of class definition"""
+
+
 
 """Bubble Sort Solver implementation"""
 """---------------------------------"""
@@ -87,13 +90,11 @@ class BubbleSolver():
         self.problem = problem
         self.max_index = problem.problem_size - 1
 
-    def setup_log(self):
-        pass
-
+    """method that executes one step of the solving process"""
     def step(self):
         if self.solved: return
-        logtext = ""
-        logcoloring = []
+        logtext = "" # for the text that is to be dispalyed in the simulation log
+        logcoloring = [] # contains the markers for proper formatting of the simulation log
         # step 0: select first element for comparison
         if self.step_id == 0:
             self.element1 = self.problem.list_to_sort[self.pointer]
@@ -152,9 +153,9 @@ class BubbleSolver():
             self.problem.list_of_status[self.pointer], self.problem.list_of_status[self.pointer + 1] = 0, 0
             self.pointer += 1
             logtext = "Start next iteration"
-        # increment step id, call visualization
+        # increment step id
         self.step_id = (self.step_id + 1) % 5
-
+        #check if the the problem is solved, meaning the last iteration was reached
         if self.pointer == (self.max_index):
             if self.max_index == 1:
                 self.problem.list_of_status[1], self.problem.list_of_status[0] = 3, 3
@@ -181,16 +182,19 @@ class BubbleSolver():
                 logtext += " in correct position"
                 logcoloring.append(["col3",l1,l2])
             self.pointer = 0
-
+        # call the simulation visualization and simulation log update methods
         self.application.problem.visualize()
         self.application.logoframe.update_log_box(logtext, logcoloring)
 
+    """method that runs the simulation by repeatedly calling the step function until the solved flag is set true"""
     def run(self):
         self.step()
         if self.solved == True: return
         self.application.after(int(1000//self.speed), self.run)
 
 """end of class definition"""
+
+
 
 """Quick Sort Solver implementation"""
 """---------------------------------"""
